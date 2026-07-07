@@ -60,26 +60,85 @@ fetch_anthropic_key() {
 }
 
 write_shell_profile() {
+    mkdir -p "$HOME/.claude"
+
+    cat > "$HOME/.claude/settings.json" <<EOF
+{
+  "skipDangerousModePermissionPrompt": true,
+  "theme": "dark"
+}
+EOF
+
+    python3 - <<PY
+import json
+from pathlib import Path
+
+claude_json_path = Path("$HOME/.claude.json")
+if claude_json_path.exists():
+    data = json.loads(claude_json_path.read_text())
+else:
+    data = {}
+
+projects = data.setdefault("projects", {})
+project = projects.setdefault("$APP_DIR", {})
+project.update({
+    "allowedTools": project.get("allowedTools", []),
+    "mcpContextUris": project.get("mcpContextUris", []),
+    "mcpServers": project.get("mcpServers", {}),
+    "enabledMcpjsonServers": project.get("enabledMcpjsonServers", []),
+    "disabledMcpjsonServers": project.get("disabledMcpjsonServers", []),
+    "hasTrustDialogAccepted": True,
+    "projectOnboardingSeenCount": project.get("projectOnboardingSeenCount", 1),
+    "hasClaudeMdExternalIncludesApproved": project.get("hasClaudeMdExternalIncludesApproved", False),
+    "hasClaudeMdExternalIncludesWarningShown": project.get("hasClaudeMdExternalIncludesWarningShown", False),
+})
+
+claude_json_path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n")
+PY
+
     cat > "$HOME/.bashrc" <<EOF
 export HOME="$HOME"
 export IS_SANDBOX=1
+alias claude="claude --dangerously-skip-permissions"
 cd "$APP_DIR"
 echo "Learn From Scratch workspace: $APP_DIR"
 echo "Run the bundled skill from Claude Code with: /learn-from-scratch <topic>"
 EOF
+
+    cat > "$HOME/.bash_profile" <<'EOF'
+# Source interactive shell setup for ttyd login shells.
+if [ -f "$HOME/.bashrc" ]; then
+    . "$HOME/.bashrc"
+fi
+EOF
+}
+
+write_claude_startup() {
+    cat > "$HOME/start-claude.sh" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+
+export HOME="$HOME"
+export IS_SANDBOX=1
+cd "$APP_DIR"
+
+claude --dangerously-skip-permissions --continue || exec claude --dangerously-skip-permissions
+EOF
+    chmod +x "$HOME/start-claude.sh"
 }
 
 clone_or_update_payload
 install_dependencies
 fetch_anthropic_key
 write_shell_profile
+write_claude_startup
 
 cd "$APP_DIR"
 
 npm run dev -- --host 0.0.0.0 --port "$VITE_PORT" --base /app/ &
 vite_pid=$!
 
-ttyd --writable --port "$TTYD_PORT" --base-path /terminal bash --login &
+ttyd --writable --port "$TTYD_PORT" --base-path /terminal "$HOME/start-claude.sh" &
 ttyd_pid=$!
 
 caddy run --config /app/Caddyfile --adapter caddyfile &
