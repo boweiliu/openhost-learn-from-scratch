@@ -12,7 +12,7 @@ The payload repo is cloned into `OPENHOST_APP_DATA_DIR/workspace/learn-from-scra
 At startup, the wrapper seeds the persistent home under `OPENHOST_APP_DATA_DIR/workspace/home` with Claude Code config:
 
 - `~/.claude/settings.json` sets dark theme and skips the dangerous-mode permission prompt.
-- `~/.claude.json` is updated so the payload checkout is trusted, first-run onboarding is marked complete, and the configured Anthropic API key fingerprint is approved.
+- `~/.claude.json` is updated so the payload checkout is trusted and first-run onboarding is marked complete. If `CLAUDE_APPROVED_API_KEY_FINGERPRINT` is set, that Anthropic API key fingerprint is also pre-approved.
 - `~/.bashrc` aliases `claude` to `claude --dangerously-skip-permissions` and enters the payload checkout.
 - `~/.bash_profile` sources `~/.bashrc` for login shells.
 - `~/start-claude.sh` starts Claude with `--dangerously-skip-permissions --continue` when a prior project transcript exists; otherwise it starts a fresh `claude --dangerously-skip-permissions` session.
