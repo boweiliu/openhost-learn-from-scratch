@@ -76,7 +76,7 @@ write_shell_profile
 
 cd "$APP_DIR"
 
-npm run dev -- --host 0.0.0.0 --port "$VITE_PORT" &
+npm run dev -- --host 0.0.0.0 --port "$VITE_PORT" --base /app/ &
 vite_pid=$!
 
 ttyd --writable --port "$TTYD_PORT" --base-path /terminal bash --login &

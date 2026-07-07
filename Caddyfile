@@ -5,6 +5,9 @@
 		respond "ok" 200
 	}
 
+	@root path /
+	redir @root /app/
+
 	redir /terminal /terminal/
 
 	handle /terminal/* {
