@@ -8,6 +8,7 @@
 	@root path /
 	redir @root /app/
 
+	redir /app /app/
 	redir /terminal /terminal/
 
 	handle /terminal/* {
