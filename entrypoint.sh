@@ -91,6 +91,17 @@ version_output = subprocess.run(
 version_match = re.search(r"\d+\.\d+\.\d+", version_output)
 claude_version = version_match.group(0) if version_match else "2.1.202"
 
+# Claude stores API-key prompt acceptance as a key fingerprint, not the raw key.
+# The default below is the observed fingerprint for the OpenHost ANTHROPIC_API_KEY
+# secret used by this deployment. Override CLAUDE_APPROVED_API_KEY_FINGERPRINT
+# if the secret changes.
+api_key_approval = "${CLAUDE_APPROVED_API_KEY_FINGERPRINT:-6GXslczdmtA-K6gnywAA}"
+if api_key_approval:
+    data["customApiKeyResponses"] = {
+        "approved": [api_key_approval],
+        "rejected": [],
+    }
+
 data.setdefault("firstStartTime", datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"))
 data["hasCompletedOnboarding"] = True
 data["lastOnboardingVersion"] = claude_version
@@ -140,7 +151,11 @@ export HOME="$HOME"
 export IS_SANDBOX=1
 cd "$APP_DIR"
 
-claude --dangerously-skip-permissions --continue || exec claude --dangerously-skip-permissions
+if find "$HOME/.claude/projects" -name '*.jsonl' -type f -print -quit 2>/dev/null | grep -q .; then
+    exec claude --dangerously-skip-permissions --continue
+fi
+
+exec claude --dangerously-skip-permissions
 EOF
     chmod +x "$HOME/start-claude.sh"
 }
