@@ -5,6 +5,8 @@
 		respond "ok" 200
 	}
 
+	redir /terminal /terminal/
+
 	handle /terminal/* {
 		reverse_proxy 127.0.0.1:{$TTYD_PORT:7681}
 	}
